@@ -1,5 +1,5 @@
 
-// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api, prefer_const_constructors
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +12,8 @@ import 'package:servemandu_partner/mainScreens/not-yet-delivered-screen.dart';
 import 'package:servemandu_partner/mainScreens/service_in_progress_screen.dart';
 
 import '../global/global.dart';
-
+import '../splashScreen/splash_screen.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -23,7 +24,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 
-
 class _HomeScreenState extends State<HomeScreen> {
 
   Card makeDashboardItem(String title,IconData iconData, int index ){
@@ -32,11 +32,11 @@ class _HomeScreenState extends State<HomeScreen> {
      margin: const EdgeInsets.all(8) ,
      child: Container(
       decoration: index ==0 || index==3 || index ==4
-        ?const BoxDecoration(
+       ?const BoxDecoration(
        gradient: LinearGradient(
         colors: [
           Colors.amber,
-           Colors.cyan,
+          Colors.cyan,
          ],
          begin:  FractionalOffset(0.0, 0.0),
          end:  FractionalOffset(1.0, 0.0),
@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
          tileMode: TileMode.clamp,
        )
       ):
-         const BoxDecoration(
+        const BoxDecoration(
           gradient: LinearGradient(
           colors: [
           Colors.redAccent,
@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
           stops: [0.0, 1.0],
           tileMode: TileMode.clamp,
            ) ,
-          ),
+        ),
        child: InkWell(
          onTap: ()
          {
@@ -87,9 +87,8 @@ class _HomeScreenState extends State<HomeScreen> {
            {
              // Total Earnings
              Navigator.push(context, MaterialPageRoute(builder: (c)=> const EarningsScreen()));
-
-
            }
+
            if(index==5)
            {
              // Logout
@@ -112,26 +111,51 @@ class _HomeScreenState extends State<HomeScreen> {
                ),
              ),
            const SizedBox( height: 10.0),
-          Center(
-           child: Text(
-             title,
-             style: const TextStyle(
-               fontSize: 16,
-               color: Colors.black,
-             ),
-           )
-          ),
-          ] ,
+           Center(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black,
+              ),
+             )
+            ),
+          ],
          ) ,
        ),
-        ),
-        );
-    }
+      ),
+    );}
 
+  restrictBlockedUsersFromUsingApp() async
+  {
+    await FirebaseFirestore.instance.collection("riders")
+        .doc(firebaseAuth.currentUser!.uid)
+        .get().then((snapshot)
+    {
+      if(snapshot.data()!["status"]!="approved")
+      {
+        firebaseAuth.signOut();
+        Fluttertoast.showToast(msg: "You have been blocked.");
+        
+        Navigator.push(context, MaterialPageRoute(builder: (c)=>MySplashScreen()));
+      }
+
+      else
+      {
+        UserLocation uLocation = UserLocation();
+        uLocation.getCurrentLocation();
+        getPerParcelDeliveryAmount(); // get Service Delivery amount
+        getRiderPreviousEarnings();
+      }
+    }
+    );
+  }
+  
   @override
   void initState() {
     super.initState();
 
+    restrictBlockedUsersFromUsingApp();
     UserLocation uLocation = UserLocation();
     uLocation.getCurrentLocation();
     getPerParcelDeliveryAmount(); // get Service Delivery amount
